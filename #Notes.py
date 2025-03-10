@@ -186,6 +186,52 @@ a = [i for i in parsed.find_all('article')]
 newData = []
 
 
+#Assigntment 007 
+
+# Grab all sets from the page
+    a = [i for i in parsed.find_all('article')]
+
+    # Create and empty data set
+    newData = []
+
+    # Iterate over all sets on the page
+    for i in a:
+        row = []
+        # Add the set name to the row of data
+        row.append(i.h1.text)
+        try:
+            # Extract price and translate to a floating point number from string, append to row IF PRICE EXISTS
+            #changed dt to dd
+            row.append(float(re.search(r'(\u20AC)(\d+.\d+)', i.find('dd', text="RRP").find_next_sibling().text, re.UNICODE).groups()[0]))
+        except:
+            # Missing value for sets with no price, append to row IF NO PRICE EXISTS
+            row.append(np.nan)
+        
+        # Add the row of data to the dataset
+        newData.append(row)
+
+    newData = pd.DataFrame(newData, columns = ['Set', 'Price_Euro'])
+    
+    # Check if there are more results on the "next" page
+    try:
+        nextPage = parsed.find('li', class_="next").a['href']
+    except:
+        nextPage = None
+    
+    # If there is another page of results, grab it and combine
+    if nextPage:
+        # Tell our program not to load new pages too fast by "sleeping" for two seconds before
+        #   going to the next page
+        time.sleep(2)
+        # Merge current data with next page
+        return pd.concat([newData, collectLegoSets(nextPage)], axis=0)
+    # Otherwise return the current data
+    else:
+        return newData
+
+lego2019 = collectLegoSets("https://brickset.com/sets/year-2019")
+
+lego2019['Price_Euro'].mean()
 
 
 
